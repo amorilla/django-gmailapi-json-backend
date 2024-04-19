@@ -36,16 +36,24 @@ class GmailApiBackend(EmailBackend):
         self.open()
 
     def open(self):
-        if self.connection: return
-        credentials = service_account.Credentials.from_service_account_info(json.loads(
-            self.google_service_account), scopes=self.gmail_scopes, subject=self.gmail_user)
-        self.connection = build('gmail', 'v1', cache_discovery=False, credentials=credentials)
-
+        if self.connection: return False
+        try:
+            credentials = service_account.Credentials.from_service_account_info(json.loads(
+                self.google_service_account), scopes=self.gmail_scopes, subject=self.gmail_user)
+            self.connection = build('gmail', 'v1', cache_discovery=False, credentials=credentials)
+            return True
+        except:
+            if not self.fail_silently:
+                self.close()
+                raise
+    
     def close(self):
         if self.connection is None: return
-        self.connection.close()
+        try:
+            self.connection.close()
+        except:
+            pass
         self.connection = None
-        return
 
     def send_messages(self, email_messages):        
         num_sent = 0
@@ -80,7 +88,6 @@ def create_message(email_message):
         message = MIMEText(email_message.body, email_message.content_subtype)
     message['to'] = ','.join(map(str, email_message.to))
     message['from'] = email_message.from_email
-    print("api-json 1: "+str(message['from']))
     if email_message.reply_to:
         message['reply-to'] = ','.join(map(str, email_message.reply_to))
     if email_message.cc:
@@ -88,7 +95,6 @@ def create_message(email_message):
     if email_message.bcc:
         message['bcc'] = ','.join(map(str, email_message.bcc))
     message['subject'] = str(email_message.subject)
-    print("api-json 2: "+str(message))
 
     if email_message.attachments:
         for attachment in email_message.attachments:

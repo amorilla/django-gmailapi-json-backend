@@ -105,3 +105,8 @@ db.sqlite3
 celerybeat-schedule
 webpack-stats.json
 config.py
+
+# Eclipse
+.project
+.pydevproject
+.settings
