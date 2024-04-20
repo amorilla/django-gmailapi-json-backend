@@ -51,9 +51,12 @@ class GmailApiBackend(EmailBackend):
         if self.connection is None: return
         try:
             self.connection.close()
+            self.connection = None
         except:
-            pass
-        self.connection = None
+            self.connection = None
+            if self.fail_silently:
+                return
+            raise
 
     def send_messages(self, email_messages):        
         num_sent = 0
@@ -75,7 +78,9 @@ class GmailApiBackend(EmailBackend):
                 # deferred only for some exceptions, so we raise one of them to save the error on the db
                 raise socket.error(error)
             else:
-                raise
+                if not self.fail_silently:
+                    raise
+                return False
         return True
 
 
